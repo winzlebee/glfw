@@ -107,6 +107,23 @@ static GLFWbool loadLibraries(void)
             _glfwPlatformGetModuleSymbol(_glfw.win32.dinput8.instance, "DirectInput8Create");
     }
 
+    _glfw.win32.user32.GetTouchInputInfo_ = (PFN_GetTouchInputInfo)
+        GetProcAddress(_glfw.win32.user32.instance, "GetTouchInputInfo");
+    _glfw.win32.user32.CloseTouchInputHandle_ = (PFN_CloseTouchInputHandle)
+        GetProcAddress(_glfw.win32.user32.instance, "CloseTouchInputHandle");
+    _glfw.win32.user32.RegisterTouchWindow_ = (PFN_RegisterTouchWindow)
+        GetProcAddress(_glfw.win32.user32.instance, "RegisterTouchWindow");
+    _glfw.win32.user32.UnregisterTouchWindow_ = (PFN_UnregisterTouchWindow)
+        GetProcAddress(_glfw.win32.user32.instance, "UnregisterTouchWindow");
+
+    if (_glfw.win32.user32.GetTouchInputInfo_ &&
+        _glfw.win32.user32.CloseTouchInputHandle_ &&
+        _glfw.win32.user32.RegisterTouchWindow_ &&
+        _glfw.win32.user32.UnregisterTouchWindow_)
+    {
+        _glfw.win32.touch.available = GLFW_TRUE;
+    }
+
     {
         int i;
         const char* names[] =
@@ -584,6 +601,8 @@ GLFWbool _glfwConnectWin32(int platformID, _GLFWplatform* platform)
         .setCursorMode = _glfwSetCursorModeWin32,
         .setRawMouseMotion = _glfwSetRawMouseMotionWin32,
         .rawMouseMotionSupported = _glfwRawMouseMotionSupportedWin32,
+        .setTouchInput = _glfwSetTouchInputWin32,
+        .touchInputSupported = _glfwTouchInputSupportedWin32,
         .createCursor = _glfwCreateCursorWin32,
         .createStandardCursor = _glfwCreateStandardCursorWin32,
         .destroyCursor = _glfwDestroyCursorWin32,
@@ -709,4 +728,3 @@ void _glfwTerminateWin32(void)
 }
 
 #endif // _GLFW_WIN32
-

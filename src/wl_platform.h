@@ -545,6 +545,11 @@ typedef struct _GLFWlibraryWayland
 
     _GLFWwindow*                keyboardFocus;
 
+    struct wl_touch*            touch;
+    _GLFWwindow*                touchFocus;
+    GLFWbool                    touchMapped[GLFW_TOUCH_LAST + 1];
+    int32_t                     touches[GLFW_TOUCH_LAST + 1];
+
     struct {
         void*                                       handle;
         PFN_wl_display_flush                        display_flush;
@@ -690,6 +695,8 @@ void _glfwSetWindowMousePassthroughWayland(_GLFWwindow* window, GLFWbool enabled
 
 void _glfwSetRawMouseMotionWayland(_GLFWwindow* window, GLFWbool enabled);
 GLFWbool _glfwRawMouseMotionSupportedWayland(void);
+void _glfwSetTouchInputWayland(_GLFWwindow* window, GLFWbool enabled);
+GLFWbool _glfwTouchInputSupportedWayland(void);
 
 void _glfwPollEventsWayland(void);
 void _glfwWaitEventsWayland(void);

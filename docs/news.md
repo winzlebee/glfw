@@ -14,6 +14,12 @@ values over 8. For compatibility with older versions, the
 @ref GLFW_UNLIMITED_MOUSE_BUTTONS input mode needs to be set to make use of
 this.
 
+## Touch Input
+
+GLFW now has support for input from touch devices, using the native touch API
+for each platform. Individual touches are tacked through contact, movement,
+cancellation and release. GLFW will track up to 8 contact points, persisting
+their indexes for the duration of the touch event.
 
 ### EGLConfig native access function {#eglconfig}
 
@@ -69,4 +75,3 @@ actively maintained and available on many platforms.
 - [Release notes for 3.2](https://www.glfw.org/docs/3.2/news.html)
 - [Release notes for 3.1](https://www.glfw.org/docs/3.1/news.html)
 - [Release notes for 3.0](https://www.glfw.org/docs/3.0/news.html)
-

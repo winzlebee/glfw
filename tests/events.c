@@ -205,6 +205,10 @@ static const char* get_action_name(int action)
             return "released";
         case GLFW_REPEAT:
             return "repeated";
+        case GLFW_MOVE:
+            return "moved";
+        case GLFW_CANCEL:
+            return "cancelled";
     }
 
     return "caused unknown action";
@@ -380,6 +384,14 @@ static void cursor_position_callback(GLFWwindow* window, double x, double y)
     Slot* slot = glfwGetWindowUserPointer(window);
     printf("%08x to %i at %0.3f: Cursor position: %f %f\n",
            counter++, slot->number, glfwGetTime(), x, y);
+}
+
+static void touch_callback(GLFWwindow* window, int id, int action, double xpos, double ypos)
+{
+    Slot* slot = glfwGetWindowUserPointer(window);
+    printf("%08x to %i at %0.3f: Touch %i was %s: %f %f\n",
+           counter++, slot->number, glfwGetTime(), id,
+           get_action_name(action), xpos, ypos);
 }
 
 static void cursor_enter_callback(GLFWwindow* window, int entered)
@@ -645,6 +657,7 @@ int main(int argc, char** argv)
         glfwSetWindowMaximizeCallback(slots[i].window, window_maximize_callback);
         glfwSetMouseButtonCallback(slots[i].window, mouse_button_callback);
         glfwSetCursorPosCallback(slots[i].window, cursor_position_callback);
+        glfwSetTouchCallback(slots[i].window, touch_callback);
         glfwSetCursorEnterCallback(slots[i].window, cursor_enter_callback);
         glfwSetScrollCallback(slots[i].window, scroll_callback);
         glfwSetKeyCallback(slots[i].window, key_callback);
@@ -679,4 +692,3 @@ int main(int argc, char** argv)
     glfwTerminate();
     exit(EXIT_SUCCESS);
 }
-

@@ -340,6 +340,24 @@ void _glfwInputScroll(_GLFWwindow* window, double xoffset, double yoffset)
         window->callbacks.scroll((GLFWwindow*) window, xoffset, yoffset);
 }
 
+// Notifies shared code of a touch event
+//
+void _glfwInputTouch(_GLFWwindow* window, int id, int action, double x, double y)
+{
+    assert(window != NULL);
+    assert(x > -FLT_MAX);
+    assert(x < FLT_MAX);
+    assert(y > -FLT_MAX);
+    assert(y < FLT_MAX);
+
+    window->touches[id] = action;
+    window->touchPositions[id][0] = x;
+    window->touchPositions[id][1] = y;
+
+    if (window->callbacks.touch)
+        window->callbacks.touch((GLFWwindow*) window, id, action, x, y);
+}
+
 // Notifies shared code of a mouse button click event
 //
 void _glfwInputMouseClick(_GLFWwindow* window, int button, int action, int mods)
@@ -577,6 +595,8 @@ GLFWAPI int glfwGetInputMode(GLFWwindow* handle, int mode)
             return window->rawMouseMotion;
         case GLFW_UNLIMITED_MOUSE_BUTTONS:
             return window->disableMouseButtonLimit;
+        case GLFW_TOUCH:
+            return window->touchInput;
     }
 
     _glfwInputError(GLFW_INVALID_ENUM, "Invalid input mode 0x%08X", mode);
@@ -690,6 +710,23 @@ GLFWAPI void glfwSetInputMode(GLFWwindow* handle, int mode, int value)
             window->disableMouseButtonLimit = value ? GLFW_TRUE : GLFW_FALSE;
             return;
         }
+        case GLFW_TOUCH:
+        {
+            if (!_glfw.platform.touchInputSupported())
+            {
+                _glfwInputError(GLFW_PLATFORM_ERROR,
+                                "Touch input is not supported on this system");
+                return;
+            }
+
+            value = value ? GLFW_TRUE : GLFW_FALSE;
+            if (window->touchInput == value)
+                return;
+
+            window->touchInput = value;
+            _glfw.platform.setTouchInput(window, value);
+            return;
+        }
     }
 
     _glfwInputError(GLFW_INVALID_ENUM, "Invalid input mode 0x%08X", mode);
@@ -699,6 +736,27 @@ GLFWAPI int glfwRawMouseMotionSupported(void)
 {
     _GLFW_REQUIRE_INIT_OR_RETURN(GLFW_FALSE);
     return _glfw.platform.rawMouseMotionSupported();
+}
+
+GLFWAPI void glfwGetTouchPos(GLFWwindow* handle, int tid, double* xpos, double* ypos)
+{
+    _GLFWwindow* window = (_GLFWwindow*) handle;
+    assert(window != NULL);
+
+    _GLFW_REQUIRE_INIT( );
+
+    if (xpos) *xpos = window->touchPositions[tid][0];
+    if (ypos) *ypos = window->touchPositions[tid][1];
+}
+
+GLFWAPI int glfwGetTouch(GLFWwindow* handle, int tid)
+{
+    _GLFWwindow* window = (_GLFWwindow*) handle;
+    assert(window != NULL);
+
+    _GLFW_REQUIRE_INIT_OR_RETURN(GLFW_RELEASE);
+
+    return (int) window->touches[tid];
 }
 
 GLFWAPI const char* glfwGetKeyName(int key, int scancode)
@@ -1028,6 +1086,22 @@ GLFWAPI GLFWscrollfun glfwSetScrollCallback(GLFWwindow* handle,
 
     _GLFW_SWAP(GLFWscrollfun, window->callbacks.scroll, cbfun);
     return cbfun;
+}
+
+GLFWAPI GLFWtouchfun glfwSetTouchCallback(GLFWwindow* handle, GLFWtouchfun cbfun)
+{
+    _GLFWwindow* window = (_GLFWwindow*) handle;
+    assert(window != NULL);
+
+    _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
+    _GLFW_SWAP(GLFWtouchfun, window->callbacks.touch, cbfun);
+    return cbfun;
+}
+
+GLFWAPI int glfwTouchInputSupported(void)
+{
+    _GLFW_REQUIRE_INIT_OR_RETURN(GLFW_FALSE);
+    return _glfw.platform.touchInputSupported();
 }
 
 GLFWAPI GLFWdropfun glfwSetDropCallback(GLFWwindow* handle, GLFWdropfun cbfun)
@@ -1516,4 +1590,3 @@ GLFWAPI uint64_t glfwGetTimerFrequency(void)
     _GLFW_REQUIRE_INIT_OR_RETURN(0);
     return _glfwPlatformGetTimerFrequency();
 }
-

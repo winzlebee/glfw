@@ -847,6 +847,8 @@ typedef struct _GLFWlibraryX11
         int         minor;
         PFN_XIQueryVersion QueryVersion;
         PFN_XISelectEvents SelectEvents;
+        GLFWbool    touchMapped[GLFW_TOUCH_LAST + 1];
+        int         touches[GLFW_TOUCH_LAST + 1];
     } xi;
 
     struct {
@@ -934,10 +936,13 @@ float _glfwGetWindowOpacityX11(_GLFWwindow* window);
 void _glfwSetWindowOpacityX11(_GLFWwindow* window, float opacity);
 void _glfwSetWindowMousePassthroughX11(_GLFWwindow* window, GLFWbool enabled);
 
-void _glfwSetRawMouseMotionX11(_GLFWwindow *window, GLFWbool enabled);
+void _glfwSetRawMouseMotionX11(_GLFWwindow* window, GLFWbool enabled);
 GLFWbool _glfwRawMouseMotionSupportedX11(void);
+void _glfwSetTouchInputX11(_GLFWwindow* window, GLFWbool enabled);
+GLFWbool _glfwTouchInputSupportedX11(void);
 
 void _glfwPollEventsX11(void);
+
 void _glfwWaitEventsX11(void);
 void _glfwWaitEventsTimeoutX11(double timeout);
 void _glfwPostEmptyEventX11(void);

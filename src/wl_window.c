@@ -2048,6 +2048,134 @@ static const struct wl_keyboard_listener keyboardListener =
     keyboardHandleRepeatInfo,
 };
 
+static int wlTouchSlotForId(int32_t id)
+{
+    for (int i = 0; i <= GLFW_TOUCH_LAST; i++)
+    {
+        if (_glfw.wl.touchMapped[i] && _glfw.wl.touches[i] == id)
+            return i;
+    }
+    return -1;
+}
+
+static int wlFindEmptyTouchSlot(void)
+{
+    for (int i = 0; i <= GLFW_TOUCH_LAST; i++)
+    {
+        if (!_glfw.wl.touchMapped[i])
+            return i;
+    }
+    return -1;
+}
+
+static void touchHandleDown(void* userData,
+                            struct wl_touch* touch,
+                            uint32_t serial,
+                            uint32_t time,
+                            struct wl_surface* surface,
+                            int32_t id,
+                            wl_fixed_t x,
+                            wl_fixed_t y)
+{
+    if (!surface)
+        return;
+
+    if (wl_proxy_get_tag((struct wl_proxy*) surface) != &_glfw.wl.tag)
+        return;
+
+    _GLFWwindow* window = wl_surface_get_user_data(surface);
+    if (!window || surface != window->wl.surface)
+        return;
+
+    fprintf(stderr, "[GLFW/WL] touchHandleDown id=%d x=%.1f y=%.1f\n",
+            id, wl_fixed_to_double(x), wl_fixed_to_double(y));
+
+    _glfw.wl.touchFocus = window;
+
+    int slot = wlFindEmptyTouchSlot();
+    if (slot == -1)
+        return;
+
+    _glfw.wl.touchMapped[slot] = GLFW_TRUE;
+    _glfw.wl.touches[slot] = id;
+    _glfwInputTouch(window, slot, GLFW_PRESS,
+                    wl_fixed_to_double(x), wl_fixed_to_double(y));
+}
+
+static void touchHandleUp(void* userData,
+                          struct wl_touch* touch,
+                          uint32_t serial,
+                          uint32_t time,
+                          int32_t id)
+{
+    int slot = wlTouchSlotForId(id);
+    if (slot == -1)
+        return;
+
+    _GLFWwindow* window = _glfw.wl.touchFocus;
+    if (!window)
+        return;
+
+    _glfw.wl.touchMapped[slot] = GLFW_FALSE;
+    _glfwInputTouch(window, slot, GLFW_RELEASE,
+                    window->touchPositions[slot][0],
+                    window->touchPositions[slot][1]);
+}
+
+static void touchHandleMotion(void* userData,
+                              struct wl_touch* touch,
+                              uint32_t time,
+                              int32_t id,
+                              wl_fixed_t x,
+                              wl_fixed_t y)
+{
+    int slot = wlTouchSlotForId(id);
+    if (slot == -1)
+        return;
+
+    _GLFWwindow* window = _glfw.wl.touchFocus;
+    if (!window)
+        return;
+
+    _glfwInputTouch(window, slot, GLFW_MOVE,
+                    wl_fixed_to_double(x), wl_fixed_to_double(y));
+}
+
+static void touchHandleFrame(void* userData,
+                             struct wl_touch* touch)
+{
+}
+
+static void touchHandleCancel(void* userData,
+                              struct wl_touch* touch)
+{
+    _GLFWwindow* window = _glfw.wl.touchFocus;
+    if (!window)
+        return;
+
+    for (int i = 0; i <= GLFW_TOUCH_LAST; i++)
+    {
+        if (_glfw.wl.touchMapped[i])
+        {
+            _glfw.wl.touchMapped[i] = GLFW_FALSE;
+            _glfwInputTouch(window, i, GLFW_CANCEL,
+                            window->touchPositions[i][0],
+                            window->touchPositions[i][1]);
+        }
+    }
+
+    _glfw.wl.touchFocus = NULL;
+}
+
+static const struct wl_touch_listener touchListener =
+{
+    touchHandleDown,
+    touchHandleUp,
+    touchHandleMotion,
+    touchHandleFrame,
+    touchHandleCancel,
+};
+
 static void seatHandleCapabilities(void* userData,
                                    struct wl_seat* seat,
                                    enum wl_seat_capability caps)
@@ -2087,6 +2215,17 @@ static void seatHandleCapabilities(void* userData,
             wl_keyboard_destroy(_glfw.wl.keyboard);
 
         _glfw.wl.keyboard = NULL;
+    }
+
+    if ((caps & WL_SEAT_CAPABILITY_TOUCH) && !_glfw.wl.touch)
+    {
+        _glfw.wl.touch = wl_seat_get_touch(seat);
+        wl_touch_add_listener(_glfw.wl.touch, &touchListener, NULL);
+    }
+    else if (!(caps & WL_SEAT_CAPABILITY_TOUCH) && _glfw.wl.touch)
+    {
+        wl_touch_destroy(_glfw.wl.touch);
+        _glfw.wl.touch = NULL;
     }
 }
 
@@ -2905,6 +3044,15 @@ void _glfwSetRawMouseMotionWayland(_GLFWwindow* window, GLFWbool enabled)
 }
 
 GLFWbool _glfwRawMouseMotionSupportedWayland(void)
+{
+    return GLFW_TRUE;
+}
+
+void _glfwSetTouchInputWayland(_GLFWwindow* window, GLFWbool enabled)
+{
+}
+
+GLFWbool _glfwTouchInputSupportedWayland(void)
 {
     return GLFW_TRUE;
 }

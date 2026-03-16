@@ -466,6 +466,8 @@ GLFWbool _glfwConnectCocoa(int platformID, _GLFWplatform* platform)
         .setCursorMode = _glfwSetCursorModeCocoa,
         .setRawMouseMotion = _glfwSetRawMouseMotionCocoa,
         .rawMouseMotionSupported = _glfwRawMouseMotionSupportedCocoa,
+        .setTouchInput = _glfwSetTouchInputCocoa,
+        .touchInputSupported = _glfwTouchInputSupportedCocoa,
         .createCursor = _glfwCreateCursorCocoa,
         .createStandardCursor = _glfwCreateStandardCursorCocoa,
         .destroyCursor = _glfwDestroyCursorCocoa,
